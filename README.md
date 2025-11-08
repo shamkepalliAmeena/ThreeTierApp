@@ -1,8 +1,8 @@
-# #TWSThreeTierAppChallenge
+# #ThreeTierApp
 
 **Project Title:**
 
-Deploying a Three-Tier Web Application using ReactJS, NodeJS, and MongoDB on AWS EKS.
+Deploying a Three-Tier Web Application using ReactJS, NodeJS, and MongoDB on AWS EKS and CI/CD Pipeline .
 
 **Project Overview:**
 
@@ -135,12 +135,156 @@ kubectl apply -f ingress.yaml
 **Three-Tier application is already deployed and accessible on EKS, you can now proceed to set up Jenkins for CI/CD.**
 
 You can use:
-
 - Same EC2 where you have AWS CLI, kubectl, and Docker ✅
-
 - Separate EC2 (recommended for production, optional for now)
+ 
+**Install Java (Required by Jenkins)**
+``` shell 
+sudo apt-get update -y
+sudo apt-get install openjdk-17-jdk -y
+java -version
+```
+**Install Jenkins**
+``` shell 
+curl -fsSL https://pkg.jenkins.io/debian/jenkins.io-2023.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt-get update -y
+sudo apt-get install jenkins -y
+```
+**Start Jenkins**
+``` shell 
+sudo systemctl start jenkins
+sudo systemctl enable jenkins
+sudo systemctl status jenkins
+``` 
+Check it is running: active (running)
+**Configure Security Group**
 
-### Cleanup
+- Open port 8080 in your EC2 Security Group:
+
+- Type: Custom TCP
+
+- Port Range: 8080
+
+- Source: Your IP (or 0.0.0.0/0 for testing)
+
+  **Access Jenkins**
+Go to:
+``` shell
+
+http://<EC2-Public-IP>:8080
+```
+* Copy initial password:
+``` shell
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+``` 
+* Install suggested plugins
+* Create admin user
+
+**Install Required Plugins**
+
+* Pipeline
+* GitHub Integration
+* Docker Pipeline
+* AWS Credentials
+* Kubernetes CLI
+* Blue Ocean (optional)
+
+**8. Configure Jenkins Credentials**
+Add:
+* AWS Credentials (for ECR & EKS)
+
+* GitHub Credentials (if repo private)
+
+* Docker credentials (optional if using ECR)
+
+**9. Create Jenkins Pipeline Job**
+
+* 1. New Item → Pipeline
+* 2. Name: three-tier-eks-deploy
+* 3.Pipeline → Pipeline script from SCM
+* 4.SCM: Git → Repository URL → Branch = main → Script Path = Jenkinsfile
+
+**Add Jenkinsfile**
+``` shell
+Use this (updated for your already deployed cluster):
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION = 'ap-south-1'
+        ECR_REGISTRY = '605134458989'.dkr.ecr.ap-south-1.amazonaws.com'
+        FRONTEND_REPO = 'public.ecr.aws/e2c0t2g7/three-tier-frontend:latest'
+        BACKEND_REPO = 'public.ecr.aws/e2c0t2g7/three-tier-backend:latest'
+        KUBE_NAMESPACE = 'workshop'
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/shamkepalliAmeena/three-tier-eks-deployment.git'
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                sh 'docker build -t $public.ecr.aws/e2c0t2g7/three-tier-frontend:latest ./Application-Code/frontend'
+                sh 'docker build -t $public.ecr.aws/e2c0t2g7/three-tier-backend:latest ./Application-Code/backend'
+            }
+        }
+
+        stage('Login to AWS ECR') {
+            steps {
+                sh 'aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 605134458989'.dkr.ecr.ap-south-1.amazonaws.com'
+            }
+        }
+
+        stage('Push Docker Images to ECR') {
+            steps {
+                sh 'docker push $public.ecr.aws/e2c0t2g7/three-tier-frontend:latest'
+                sh 'docker push $public.ecr.aws/e2c0t2g7/three-tier-backend:latest'
+            }
+        }
+
+        stage('Deploy to EKS') {
+            steps {
+                sh '''
+                aws eks update-kubeconfig --region ap-south-1 --name three-tier-cluster
+                kubectl apply -f Kubernetes-Manifests-Files/
+                kubectl rollout status deployment/frontend -n workshop
+                kubectl rollout status deployment/backend -n workshop
+                '''
+            }
+        }
+    }
+
+    post {
+        success { echo '🎉 Deployment Successful!' }
+        failure { echo '❌ Deployment Failed!' }
+    }
+}
+
+```
+**Build & Verify**
+
+Click Build Now in Jenkins
+
+**Watch each stage:**
+
+* Code checkout 
+* Docker build 
+* Push to ECR 
+* Deployment to EKS 
+
+**Verify pods:**
+``` shell
+kubectl get pods -n workshop
+kubectl get svc -n workshop
+```
+Everything should remain accessible, and Jenkins will handle new deployments automatically.
+
+**### Cleanup**
 - To delete the EKS cluster:
 ``` shell
 eksctl delete cluster --name three-tier-cluster --region ap-south-1
@@ -149,7 +293,8 @@ eksctl delete cluster --name three-tier-cluster --region ap-south-1
 ```
 Stop or Terminate the EC2 instance created in step 2.
 Delete the Load Balancer created in step 9 and 10.
-Go to EC2 console, access security group section and delete security groups created in previous steps
+Go to EC2 console, access security group section and delete security groups created in previous steps.
+remove ECR Repositories.
 ```
 
 
