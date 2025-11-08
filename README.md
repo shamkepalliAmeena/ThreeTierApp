@@ -2,7 +2,8 @@
 
 **Project Title:**
 
-Deploying a Three-Tier Web Application using ReactJS, NodeJS, and MongoDB on AWS EKS and CI/CD Pipeline .
+Deploying a Three-Tier Web Application using ReactJS, NodeJS, and MongoDB on AWS EKS and  through IAM user setup, infrastructure provisioning, CI/CD pipeline configuration, EKS cluster creation, and more.
+
 
 **Project Overview:**
 
@@ -56,10 +57,7 @@ The `Kubernetes-Manifests-Files` directory holds Kubernetes manifests for deploy
 - Helm charts for efficient monitoring setup
 - GitOps with ArgoCD - the cherry on top!
 
-📈 **The journey covered everything from setting up tools to deploying a Three-Tier app, ensuring data persistence, and implementing CI/CD pipelines.**
-
 ## Getting Started
-To get started with this project, refer to our [comprehensive guide](https://amanpathakdevops.medium.com/advanced-end-to-end-devsecops-kubernetes-three-tier-project-using-aws-eks-argocd-prometheus-fbbfdb956d1a) that walks you through IAM user setup, infrastructure provisioning, CI/CD pipeline configuration, EKS cluster creation, and more.
 
 ### Step 1: IAM Configuration
 - Create a user `eks-admin` with `AdministratorAccess`.
@@ -192,16 +190,14 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
 **8. Configure Jenkins Credentials**
 Add:
-* AWS Credentials (for ECR & EKS)
-
-* GitHub Credentials (if repo private)
-
-* Docker credentials (optional if using ECR)
+* 1.AWS Credentials (for ECR & EKS)
+* 2.GitHub Credentials (if repo private)
+* 3.Docker credentials (optional if using ECR)
 
 **9. Create Jenkins Pipeline Job**
 
-* 1. New Item → Pipeline
-* 2. Name: three-tier-eks-deploy
+* 1.New Item → Pipeline
+* 2.Name: three-tier-eks-deploy
 * 3.Pipeline → Pipeline script from SCM
 * 4.SCM: Git → Repository URL → Branch = main → Script Path = Jenkinsfile
 
@@ -269,9 +265,7 @@ pipeline {
 **Build & Verify**
 
 Click Build Now in Jenkins
-
 **Watch each stage:**
-
 * Code checkout 
 * Docker build 
 * Push to ECR 
@@ -296,7 +290,6 @@ Delete the Load Balancer created in step 9 and 10.
 Go to EC2 console, access security group section and delete security groups created in previous steps.
 remove ECR Repositories.
 ```
-
 
 ---
 Happy Learning! 🚀👨‍💻👩‍💻
