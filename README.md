@@ -202,64 +202,6 @@ Add:
 * 4.SCM: Git → Repository URL → Branch = main → Script Path = Jenkinsfile
 
 **Add Jenkinsfile**
-``` shell
-Use this (updated for your already deployed cluster):
-pipeline {
-    agent any
-
-    environment {
-        AWS_REGION = 'ap-south-1'
-        ECR_REGISTRY = '605134458989'.dkr.ecr.ap-south-1.amazonaws.com'
-        FRONTEND_REPO = 'public.ecr.aws/e2c0t2g7/three-tier-frontend:latest'
-        BACKEND_REPO = 'public.ecr.aws/e2c0t2g7/three-tier-backend:latest'
-        KUBE_NAMESPACE = 'workshop'
-    }
-
-    stages {
-
-        stage('Checkout Code') {
-            steps {
-                git branch: 'main', url: 'https://github.com/shamkepalliAmeena/three-tier-eks-deployment.git'
-            }
-        }
-
-        stage('Build Docker Images') {
-            steps {
-                sh 'docker build -t $public.ecr.aws/e2c0t2g7/three-tier-frontend:latest ./Application-Code/frontend'
-                sh 'docker build -t $public.ecr.aws/e2c0t2g7/three-tier-backend:latest ./Application-Code/backend'
-            }
-        }
-
-        stage('Login to AWS ECR') {
-            steps {
-                sh 'aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 605134458989'.dkr.ecr.ap-south-1.amazonaws.com'
-            }
-        }
-
-        stage('Push Docker Images to ECR') {
-            steps {
-                sh 'docker push $public.ecr.aws/e2c0t2g7/three-tier-frontend:latest'
-                sh 'docker push $public.ecr.aws/e2c0t2g7/three-tier-backend:latest'
-            }
-        }
-
-        stage('Deploy to EKS') {
-            steps {
-                sh '''
-                aws eks update-kubeconfig --region ap-south-1 --name three-tier-cluster
-                kubectl apply -f Kubernetes-Manifests-Files/
-                kubectl rollout status deployment/frontend -n workshop
-                kubectl rollout status deployment/backend -n workshop
-                '''
-            }
-        }
-    }
-
-    post {
-        success { echo '🎉 Deployment Successful!' }
-        failure { echo '❌ Deployment Failed!' }
-    }
-}
 
 ```
 **Build & Verify**
